@@ -11,9 +11,10 @@ from colorspacious import cspace_converter
 from sklearn.preprocessing import normalize
 import torch
 from scipy.sparse.linalg import eigs
+import matplotlib.pyplot as plt
 
 
-mesh1  = trimesh.load_mesh('3d_model_of_Sphere_poisson.stl')
+mesh1  = trimesh.load_mesh('sphere.stl')
 
 #o3d.visualization.draw_geometries([mesh1])
 normalmag = np.linalg.norm(mesh1.face_normals, axis=1)
@@ -28,7 +29,11 @@ freq, basis = np.linalg.eig((matL))
 idx = freq.argsort()[::-1]
 freq = freq[idx]
 basis = basis[:,idx]
-basis = matA * basis
+#basis = matA * basis
+
+plt.plot(abs(freq))
+plt.title("frequency")
+plt.show()
 
 scals = np.asarray(basis[:,5])
 scals = scals / (np.linalg.norm(scals))

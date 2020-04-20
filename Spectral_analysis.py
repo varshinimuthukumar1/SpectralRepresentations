@@ -1,12 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
+import trimesh.proximity
 import trimesh
 import statistics
+import open3d as o3d
 
-def get_spectrum(L,VA,mesh):
+def get_spectrum(L,VA,mesh1):
 
-    #mesh = trimesh.load_mesh('3d_model_of_Sphere_poisson.stl')
+    pt_cld = o3d.io.read_point_cloud("sphere_poisson.ply")#trimesh.load_mesh('sphere_poisson.stl')
+    closest_points = trimesh.proximity.closest_point(mesh1, pt_cld.points)
     valence = 6
     cos2pin = math.cos(2.0 * math.pi / valence)
     beta = (5.0 / 8.0 - (3.0 / 8.0 + 1.0 / 4.0 * cos2pin) * (3.0 / 8.0 + 1.0 / 4.0 * cos2pin)) / valence
@@ -14,18 +17,18 @@ def get_spectrum(L,VA,mesh):
     gamma = 1.0 - alpha - beta
 
     spect = np.zeros(L.shape[1])
-    print(mesh.faces.shape)
-    for i in range(mesh.faces.shape[0]):
 
-        i0 = mesh.faces[i, 0]
-        i1 = mesh.faces[i, 1]
-        i2 = mesh.faces[i, 2]
+    for i in closest_points[2]:
+
+        i0 = mesh1.faces[i, 0]
+        i1 = mesh1.faces[i, 1]
+        i2 = mesh1.faces[i, 2]
         spect = spect + alpha*L[i0,:]+ beta*L[i1,:] + gamma*L[i2,:]
 
     #spect =np.sum(L, axis=1)
-    spect = np.square(np.asarray(spect)) #*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
+    spect = np.square(np.asarray(spect)) *np.sum(VA) / L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
     print(spect.shape)
-    spect=np.multiply(spect,np.sum(VA) ) / mesh.faces.shape[0]
+    #spect=np.multiply(spect,np.sum(VA) ) / mesh.faces.shape[0]
     #print(spect)
     plt.plot(spect)
     plt.title('Spectrum plot')
@@ -85,7 +88,8 @@ def get_radial_means_copy(S):
     i = 1
 
 
-    while (ns <= len(S)):
+    while (ns < len(S)) and (i<len(R)):
+
         ne = min(ns + nl - 1, len(S))
         print(ns)
         print(ne)
