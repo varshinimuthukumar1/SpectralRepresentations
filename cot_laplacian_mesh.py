@@ -5,8 +5,6 @@ import torch
 
 
 
-
-
 def get_laplacian_new(verts, tris, weight_type='cotangent',
                            return_vertex_area=True, area_type='mixed',
                            add_diagonal=True):

@@ -10,23 +10,25 @@ from matplotlib import cm
 from colorspacious import cspace_converter
 from sklearn.preprocessing import normalize
 import torch
+from scipy.sparse.linalg import eigs
 
 
-mesh1  = trimesh.load_mesh('3d_model_of_Sphere.stl')
+mesh1  = trimesh.load_mesh('3d_model_of_Sphere_poisson.stl')
 
 #o3d.visualization.draw_geometries([mesh1])
 normalmag = np.linalg.norm(mesh1.face_normals, axis=1)
 [L,VA] = cot_laplacian_mesh.get_laplacian_new(mesh1.vertices, mesh1.faces)
-matA = np.diag(1.0/(VA))
-#matL = matA * np.asarray(L.toarray()) * matA
+matA = np.diag(np.divide(1.0,np.sqrt(VA)))
+matL = matA * np.asarray(L.toarray()) * matA
 
-matL = L.toarray() #np.multiply(L,matA)
+#matL = L.toarray()
 freq, basis = np.linalg.eig((matL))
 
 
 idx = freq.argsort()[::-1]
 freq = freq[idx]
 basis = basis[:,idx]
+basis = matA * basis
 
 scals = np.asarray(basis[:,5])
 scals = scals / (np.linalg.norm(scals))
@@ -42,7 +44,7 @@ vtmesh = trimesh2vtk(mesh1)
 vtmesh.pointColors(scals, cmap='jet')
 #o3d.visualization.draw_geometries([mesh1])
 show(vtmesh, bg='w')
-spect = Spectral_analysis.get_spectrum(basis,VA)
+spect = Spectral_analysis.get_spectrum(basis,VA,mesh1)
 print('1')
 
-R,A = Spectral_analysis.get_radialmeans(spect)
+R,A = Spectral_analysis.get_radial_means_copy(spect)
