@@ -8,7 +8,7 @@ import open3d as o3d
 
 def get_spectrum(L,VA,mesh1):
 
-    pt_cld = o3d.io.read_point_cloud("sphere_poisson.ply")#trimesh.load_mesh('sphere_poisson.stl')
+    pt_cld = o3d.io.read_point_cloud("output.ply")#trimesh.load_mesh('sphere_poisson.stl')
     closest_points = trimesh.proximity.closest_point(mesh1, pt_cld.points)
     valence = 6
     cos2pin = math.cos(2.0 * math.pi / valence)
@@ -26,7 +26,7 @@ def get_spectrum(L,VA,mesh1):
         spect = spect + alpha*L[i0,:]+ beta*L[i1,:] + gamma*L[i2,:]
 
     #spect =np.sum(L, axis=1)
-    spect = np.square(np.asarray(spect)) *np.sum(VA) / L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
+    spect = np.square(np.asarray(spect)) *np.sum(VA) /len(closest_points[2])#/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
     print(spect.shape)
     #spect=np.multiply(spect,np.sum(VA) ) / mesh.faces.shape[0]
     #print(spect)

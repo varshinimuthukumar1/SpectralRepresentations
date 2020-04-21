@@ -14,7 +14,7 @@ from scipy.sparse.linalg import eigs
 import matplotlib.pyplot as plt
 
 
-mesh1  = trimesh.load_mesh('sphere.stl')
+mesh1  = trimesh.load_mesh('happy.stl')
 
 #o3d.visualization.draw_geometries([mesh1])
 normalmag = np.linalg.norm(mesh1.face_normals, axis=1)
@@ -52,4 +52,4 @@ show(vtmesh, bg='w')
 spect = Spectral_analysis.get_spectrum(basis,VA,mesh1)
 print('1')
 
-R,A = Spectral_analysis.get_radial_means_copy(spect)
+R,A = Spectral_analysis.get_radialmeans(spect)
