@@ -5,38 +5,48 @@ import trimesh.proximity
 import trimesh
 import statistics
 import open3d as o3d
+from scipy.spatial import distance
+
+
+def get_meshtriangle_distances(point, vertex_array):
+
+    temp_dist = distance.cdist(point, vertex_array)
+    temp_dist = 1./temp_dist.transpose()
+    weightv1 = temp_dist[0]
+    weightv2 = temp_dist[1]
+    weightv3 = temp_dist[2]
+
+    return weightv1,weightv2,weightv3
 
 def get_spectrum(L,VA,mesh1):
 
-    pt_cld = o3d.io.read_point_cloud("output.ply")#trimesh.load_mesh('sphere_poisson.stl')
+    pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_poisson10k.ply")
     closest_points = trimesh.proximity.closest_point(mesh1, pt_cld.points)
-    valence = 6
-    cos2pin = math.cos(2.0 * math.pi / valence)
-    beta = (5.0 / 8.0 - (3.0 / 8.0 + 1.0 / 4.0 * cos2pin) * (3.0 / 8.0 + 1.0 / 4.0 * cos2pin)) / valence
-    alpha = 1.0 - beta * valence
-    gamma = 1.0 - alpha - beta
 
     spect = np.zeros(L.shape[1])
 
-    for i in closest_points[2]:
+    for j in range(len(closest_points[2])):
 
+        i = closest_points[2][j]
         i0 = mesh1.faces[i, 0]
         i1 = mesh1.faces[i, 1]
         i2 = mesh1.faces[i, 2]
-        spect = spect + alpha*L[i0,:]+ beta*L[i1,:] + gamma*L[i2,:]
+        t = pt_cld.points[j]
 
+        weightv1,weightv2,weightv3 = get_meshtriangle_distances(np.array([pt_cld.points[j]]).reshape(1,-1), np.array([mesh1.vertices[i0],mesh1.vertices[i1],mesh1.vertices[i2]]))
+
+        spect = spect + (weightv1*L[i0,:]+ weightv2*L[i1,:] + weightv3*L[i2,:])/(weightv1 + weightv2 + weightv3)
+    
     #spect =np.sum(L, axis=1)
-    spect = np.square(np.asarray(spect)) *np.sum(VA) /len(closest_points[2])#/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
-    print(spect.shape)
-    #spect=np.multiply(spect,np.sum(VA) ) / mesh.faces.shape[0]
-    #print(spect)
+    spect = np.square(np.asarray(spect)) *np.sum(VA) #/len(closest_points[2])#/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
+
     plt.plot(spect)
     plt.title('Spectrum plot')
     plt.show()
     return spect
 
-
-def get_radialmeans(spectrum):
+# split frequency in bands of 2l +1 (as mentioned in the paper)
+def get_radial_means(spectrum):
 
 
     spectrum= np.asarray(spectrum)
@@ -44,8 +54,6 @@ def get_radialmeans(spectrum):
     print(size2)
     R = []
     A = []
-    #R = np.zeros((1, math.ceil(math.sqrt(len(spectrum)))))
-    #A = np.zeros((1, math.ceil(math.sqrt(len(spectrum)))))
 
     ns = 0
     i = 0
@@ -62,6 +70,7 @@ def get_radialmeans(spectrum):
         i += 1
         ns = ne + 1
 
+    R[0] = 0.1
     plt.plot(R)
     plt.title('Radial means')
     plt.show()
@@ -71,13 +80,9 @@ def get_radialmeans(spectrum):
 
     return R,A
 
+
+# Implementation as per the code of the paper
 def get_radial_means_copy(S):
-
-
-    #S = np.asarray(S).T
-    print(S.shape)
-    #R = np.zeros((round(math.sqrt(size2[1]))))
-    #A = np.zeros((round(math.sqrt(size2[1]))))
 
     R = np.zeros((math.ceil(math.sqrt(len(S)))))
     A = np.zeros((math.ceil(math.sqrt(len(S)))))

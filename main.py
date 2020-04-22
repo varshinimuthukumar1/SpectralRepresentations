@@ -14,42 +14,29 @@ from scipy.sparse.linalg import eigs
 import matplotlib.pyplot as plt
 
 
-mesh1  = trimesh.load_mesh('happy.stl')
+# Read mesh
+mesh1  = trimesh.load_mesh('data/1_sphere/sphere.stl')
 
-#o3d.visualization.draw_geometries([mesh1])
-normalmag = np.linalg.norm(mesh1.face_normals, axis=1)
+# Get L matrix, i.e. Cotangent Laplacian matrix
 [L,VA] = cot_laplacian_mesh.get_laplacian_new(mesh1.vertices, mesh1.faces)
 matA = np.diag(np.divide(1.0,np.sqrt(VA)))
+
+# Normalize L matrix with area, or not
 matL = matA * np.asarray(L.toarray()) * matA
-
 #matL = L.toarray()
-freq, basis = np.linalg.eig((matL))
 
 
-idx = freq.argsort()[::-1]
-freq = freq[idx]
-basis = basis[:,idx]
+
+# Get frequencies and basis functins
+freq,basis = cot_laplacian_mesh.get_laplacian_basis(mesh1,matL,True)
+
+#Normalize basis
 #basis = matA * basis
 
-plt.plot(abs(freq))
-plt.title("frequency")
-plt.show()
-
-scals = np.asarray(basis[:,5])
-scals = scals / (np.linalg.norm(scals))
-#viridis = cm.get_cmap('bwr', basis.shape[0])
-
-#colormap = viridis(scals)
-
-#radii = np.linalg.norm(mesh1.vertices - mesh1.center_mass, axis=1)
-#mesh1.visual.vertex_colors= trimesh.visual.interpolate(radii, color_map='viridis')#trimesh.visual.color.linear_color_map(normalmag) # o3d.utility.Vector3dVector(colormap[:,:-1])
 
 
-vtmesh = trimesh2vtk(mesh1)
-vtmesh.pointColors(scals, cmap='jet')
-#o3d.visualization.draw_geometries([mesh1])
-show(vtmesh, bg='w')
+# Get spectrum
 spect = Spectral_analysis.get_spectrum(basis,VA,mesh1)
-print('1')
 
-R,A = Spectral_analysis.get_radialmeans(spect)
+#Get radial means and anisotropy
+R,A = Spectral_analysis.get_radial_means(spect)

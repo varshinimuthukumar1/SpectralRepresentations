@@ -2,8 +2,72 @@ import numpy as np
 from utils import veclen
 from scipy import sparse
 import torch
+from vtkplotter import trimesh2vtk, show
+import matplotlib.pyplot as plt
 
+def get_laplacian_basis(mesh1,matL,plot=False):
 
+    freq, basis = np.linalg.eig((matL))
+
+    idx = freq.argsort()[::-1]
+    freq = freq[idx]
+    basis = basis[:, idx]
+
+    if plot == True:
+        scals = np.absolute(np.asarray(basis[:, 1]))
+        scals = scals / (np.linalg.norm(scals))
+
+        vtmesh = trimesh2vtk(mesh1)
+        vtmesh.pointColors(scals, cmap='jet')
+
+        show(vtmesh, bg='w')
+
+        plt.plot(abs(freq))
+        plt.title("frequency")
+        plt.show()
+
+    return freq,basis
+
+def get_cot_laplacian(verts, tris):
+
+    n = len(verts)
+    W_ij = np.empty(0)
+    I = np.empty(0, np.int32)
+    J = np.empty(0, np.int32)
+    for i1, i2, i3 in [(0,1,2), (1,2,0), (2,0,1)]:
+        vi1 = tris[:, i1]
+        vi2 = tris[:, i2]
+        vi3 = tris[:, i3]
+
+        u = verts[vi2] - verts[vi1]
+        v = verts[vi3] - verts[vi1]
+        cotan = (u * v).sum(axis=1)/veclen(np.cross(u,v))
+
+        W_ij = np.append(W_ij, 0.5*cotan)
+        I = np.append(I, vi2)
+        J = np.append(J, vi3)
+
+        W_ij = np.append(W_ij, 0.5*cotan)
+        I = np.append(I, vi3)
+        J = np.append(J, vi2)
+
+    L = sparse.csr_matrix((W_ij,(I,J)), shape=(n,n))
+    # compute diagonal entries
+    L = L - sparse.spdiags(L * np.ones(n), 0, n, n)
+    L = L.tocsr()
+    # area matrix
+    e1 = verts[tris[:, 1]] - verts[tris[:, 0]]
+    e2 = verts[tris[:, 2]] - verts[tris[:, 0]]
+    n = np.cross(e1, e2)
+    triangle_area = .5 * veclen(n)
+    # compute per-vertex area
+    vertex_area = np.zeros(len(verts))
+    ta3 = triangle_area / 3
+    for i in range(tris.shape[1]):
+        bc = np.bincount(tris[:, i].astype(int), ta3)
+        vertex_area[:len(bc)] += bc
+    VA = sparse.spdiags(vertex_area, 0, len(verts), len(verts))
+    return L, VA
 
 def get_laplacian_new(verts, tris, weight_type='cotangent',
                            return_vertex_area=True, area_type='mixed',
