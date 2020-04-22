@@ -15,20 +15,18 @@ import matplotlib.pyplot as plt
 
 
 # Read mesh
-mesh1  = trimesh.load_mesh('data/1_sphere/sphere.stl')
+mesh1  = trimesh.load_mesh('data/1_sphere/sphere_dense.stl')
 
 # Get L matrix, i.e. Cotangent Laplacian matrix
 [L,VA] = cot_laplacian_mesh.get_laplacian_new(mesh1.vertices, mesh1.faces)
 matA = np.diag(np.divide(1.0,np.sqrt(VA)))
 
 # Normalize L matrix with area, or not
-matL = matA * np.asarray(L.toarray()) * matA
-#matL = L.toarray()
-
+matL = L.toarray() #matA * np.asarray(L.toarray()) * matA
 
 
 # Get frequencies and basis functins
-freq,basis = cot_laplacian_mesh.get_laplacian_basis(mesh1,matL,True)
+freq,basis = cot_laplacian_mesh.get_laplacian_basis_svd(mesh1,matL,matA,True)
 
 #Normalize basis
 #basis = matA * basis

@@ -7,11 +7,23 @@ import statistics
 import open3d as o3d
 from scipy.spatial import distance
 
+def get_weights_frompaper():
+    valence = 6
+    cos2pin = math.cos(2.0 * math.pi / valence)
+    beta = (5.0 / 8.0 - (3.0 / 8.0 + 1.0 / 4.0 * cos2pin) * (3.0 / 8.0 + 1.0 / 4.0 * cos2pin)) / valence
+    alpha = 1.0 - beta * valence
+    gamma = 1.0 - alpha - beta
+
+    return alpha, beta, gamma
 
 def get_meshtriangle_distances(point, vertex_array):
 
     temp_dist = distance.cdist(point, vertex_array)
+
+
+
     temp_dist = 1./temp_dist.transpose()
+
     weightv1 = temp_dist[0]
     weightv2 = temp_dist[1]
     weightv3 = temp_dist[2]
@@ -20,7 +32,7 @@ def get_meshtriangle_distances(point, vertex_array):
 
 def get_spectrum(L,VA,mesh1):
 
-    pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_poisson10k.ply")
+    pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_dense_poisson.ply")
     closest_points = trimesh.proximity.closest_point(mesh1, pt_cld.points)
 
     spect = np.zeros(L.shape[1])
@@ -31,14 +43,13 @@ def get_spectrum(L,VA,mesh1):
         i0 = mesh1.faces[i, 0]
         i1 = mesh1.faces[i, 1]
         i2 = mesh1.faces[i, 2]
-        t = pt_cld.points[j]
 
         weightv1,weightv2,weightv3 = get_meshtriangle_distances(np.array([pt_cld.points[j]]).reshape(1,-1), np.array([mesh1.vertices[i0],mesh1.vertices[i1],mesh1.vertices[i2]]))
 
         spect = spect + (weightv1*L[i0,:]+ weightv2*L[i1,:] + weightv3*L[i2,:])/(weightv1 + weightv2 + weightv3)
-    
+
     #spect =np.sum(L, axis=1)
-    spect = np.square(np.asarray(spect)) *np.sum(VA) #/len(closest_points[2])#/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
+    spect = np.square(np.asarray(spect)) *mesh1.area/len(pt_cld.points) #*mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
 
     plt.plot(spect)
     plt.title('Spectrum plot')

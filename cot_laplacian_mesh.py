@@ -4,6 +4,34 @@ from scipy import sparse
 import torch
 from vtkplotter import trimesh2vtk, show
 import matplotlib.pyplot as plt
+from scipy import linalg
+
+def get_laplacian_basis_svd(mesh1,matL,matA,plot=False):
+
+    U, freq, basis = linalg.svd(matL)
+
+    idx = freq.argsort()[::-1]
+    freq = freq[idx]
+
+
+    #basis = matA * basis
+
+    basis = basis[:, idx]
+
+    if plot == True:
+        scals = np.absolute(np.asarray(basis[:, 1]))
+        #scals = scals / (np.linalg.norm(scals))
+
+        vtmesh = trimesh2vtk(mesh1)
+        vtmesh.pointColors(scals, cmap='jet')
+
+        show(vtmesh, bg='w')
+
+        plt.plot(abs(freq))
+        plt.title("frequency")
+        plt.show()
+
+    return freq, basis
 
 def get_laplacian_basis(mesh1,matL,plot=False):
 
