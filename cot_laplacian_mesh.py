@@ -6,15 +6,14 @@ from vtkplotter import trimesh2vtk, show
 import matplotlib.pyplot as plt
 from scipy import linalg
 
-def get_laplacian_basis_svd(mesh1,matL,matA,plot=False):
+def get_laplacian_basis_svd(mesh1,matL,matA, plot=False):
 
     U, freq, basis = linalg.svd(matL)
 
-    idx = freq.argsort()[::-1]
+    basis = np.multiply(np.diag(matA) , basis)
+
+    idx = freq.argsort()
     freq = freq[idx]
-
-
-    #basis = matA * basis
 
     basis = basis[:, idx]
 
