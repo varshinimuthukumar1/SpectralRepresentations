@@ -6,20 +6,22 @@ from vtkplotter import trimesh2vtk, show
 import matplotlib.pyplot as plt
 from scipy import linalg
 
-def get_laplacian_basis_svd(mesh1,matL,matA, plot=False):
+def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
 
     U, freq, basis = linalg.svd(matL)
-
-    basis = np.multiply(np.diag(matA) , basis)
+    #freq, basis = np.linalg.eig((matL))
+    #
 
     idx = freq.argsort()
     freq = freq[idx]
 
     basis = basis[:, idx]
 
+    #basis = np.multiply(matA, basis)
+
     if plot == True:
         scals = np.absolute(np.asarray(basis[:, 1]))
-        #scals = scals / (np.linalg.norm(scals))
+        scals = scals / (np.linalg.norm(scals))
 
         vtmesh = trimesh2vtk(mesh1)
         vtmesh.pointColors(scals, cmap='jet')

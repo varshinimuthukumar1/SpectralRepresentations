@@ -58,6 +58,7 @@ def get_spectrum_projected(L,VA,mesh1,pt_cld ):
 
     return spect
 
+
 def get_spectrum(L,VA,mesh1, pt_cld):
 
     #pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_poisson.ply")
@@ -65,16 +66,16 @@ def get_spectrum(L,VA,mesh1, pt_cld):
 
     spect = np.zeros(L.shape[1])
 
-    for j in range(len(closest_points[2])):
+    for j in range(len(pt_cld.points)):
 
         i = closest_points[2][j]
         i0 = mesh1.faces[i, 0]
         i1 = mesh1.faces[i, 1]
         i2 = mesh1.faces[i, 2]
 
-        weightv1,weightv2,weightv3 = get_meshtriangle_distances(np.array([pt_cld.points[j]]).reshape(1,-1), np.array([mesh1.vertices[i0],mesh1.vertices[i1],mesh1.vertices[i2]]))
+        weightv1,weightv2,weightv3 = get_weights_frompaper()#get_meshtriangle_distances(np.array([pt_cld.points[j]]).reshape(1,-1), np.array([mesh1.vertices[i0],mesh1.vertices[i1],mesh1.vertices[i2]]))
 
-        spect = spect + (weightv1 * L[:,i0] + weightv2 * L[:,i1] + weightv3 * L[:,i2] / (weightv1 + weightv2 + weightv3))
+        spect = spect +( (weightv1 * L[i0,:] + weightv2 * L[i1,:] + weightv3 * L[i2,:] )/ (weightv1 + weightv2 + weightv3))
 
     spect = np.square(np.asarray(spect)) *mesh1.area /len(pt_cld.points)#/len(pt_cld.points)# *mesh1.area #/len(pt_cld.points) #*mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
 
