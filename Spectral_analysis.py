@@ -33,7 +33,7 @@ def get_meshtriangle_distances(point, vertex_array):
 
 def get_spectrum_projected(L,VA,mesh1,pt_cld ):
 
-    pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_poisson.ply")
+    pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_dense.ply")
     closest_points = trimesh.proximity.closest_point(mesh1, pt_cld.points)
 
     spect = np.zeros([L.shape[1], 3])
@@ -73,7 +73,7 @@ def get_spectrum(L,VA,mesh1, pt_cld):
         i1 = mesh1.faces[i, 1]
         i2 = mesh1.faces[i, 2]
 
-        weightv1,weightv2,weightv3 = get_weights_frompaper()#get_meshtriangle_distances(np.array([pt_cld.points[j]]).reshape(1,-1), np.array([mesh1.vertices[i0],mesh1.vertices[i1],mesh1.vertices[i2]]))
+        weightv1,weightv2,weightv3 = get_meshtriangle_distances(np.array([pt_cld.points[j]]).reshape(1,-1), np.array([mesh1.vertices[i0],mesh1.vertices[i1],mesh1.vertices[i2]]))
 
         spect = spect +( (weightv1 * L[i0,:] + weightv2 * L[i1,:] + weightv3 * L[i2,:] )/ (weightv1 + weightv2 + weightv3))
 
@@ -112,9 +112,9 @@ def get_radial_means(spectrum):
     R[0] = 0.1
     plt.plot(R)
     plt.title('Radial means')
-    plt.show()
     plt.plot(A)
     plt.title('Anisotropy')
+    plt.legend()
     plt.show()
 
     return R,A
@@ -159,42 +159,38 @@ def get_radial_means_copy(S):
 
 
 def RadialMeanAccurate(S, Freq):
-
     size2 = len(S)
 
     freq = np.sqrt(Freq)
-    fmax = freq[size2-1]
+    fmax = np.amax(freq)
     nbin = 100
 
     R = np.zeros(nbin)
     A = np.zeros(nbin)
 
     ns = 0
-    ne = 1
+    ne = 2
     idx = 0
 
-    while (1):
-        while (ne < size2) and (freq[ne] <= (idx * fmax / nbin)):
-            ne = ne + 1
+    for idx in range(nbin):
 
-        if ne == size2:
+        if (ns == size2-1) or (ne == size2-1):
             break
 
-        if idx==nbin:
-            break
+        while (float(freq[ne]) < float((idx * fmax /nbin))):
+            ne = ne+1
 
-        print(idx)
         print(ns)
         print(ne)
 
-        R[idx] = statistics.mean(S[ns:ne+1])
-        A[idx] = statistics.variance(S[ns:ne+1]) / R[idx]**2
-        idx = idx + 1
-        ns = ne
-        ne = ne + 1
+        R[idx] = statistics.mean(S[ns:ne+1]) #np.sum(S[ns:ne])/len(S[ns:ne])#statistics.mean(S[ns:ne])
+        A[idx] = statistics.variance(S[ns:ne+1]) / R[idx] ** 2
+
+        ns = ne + 1
+        ne = ne + 2
 
 
-    #R[0] = 0.1
+    R[0] = 0.1
 
     plt.plot(R)
     plt.title('Radial means')

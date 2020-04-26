@@ -1,6 +1,7 @@
 import numpy as np
 from utils import veclen
 from scipy import sparse
+import scipy
 import torch
 from vtkplotter import trimesh2vtk, show
 import matplotlib.pyplot as plt
@@ -8,16 +9,19 @@ from scipy import linalg
 
 def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
 
-    U, freq, basis = linalg.svd(matL)
+    #U, freq, basis = linalg.svd(matL)
     #freq, basis = np.linalg.eig((matL))
     #
+    freq, basis = scipy.linalg.eig(matL, matA)
 
-    idx = freq.argsort()
+    freq = np.sqrt(freq)
+
+    idx = freq.argsort()[::-1]
     freq = freq[idx]
 
     basis = basis[:, idx]
 
-    #basis = np.multiply(matA, basis)
+    #basis = np.multiply(np.diag(matA), basis)
 
     if plot == True:
         scals = np.absolute(np.asarray(basis[:, 1]))
@@ -28,7 +32,7 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
 
         show(vtmesh, bg='w')
 
-        plt.plot(abs(freq))
+        plt.plot((freq)**2)
         plt.title("frequency")
         plt.show()
 
