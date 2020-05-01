@@ -31,34 +31,6 @@ def get_meshtriangle_distances(point, vertex_array):
     return weightv1,weightv2,weightv3
 
 
-def get_spectrum_projected(L,VA,mesh1,pt_cld ):
-
-    pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_dense.ply")
-    closest_points = trimesh.proximity.closest_point(mesh1, pt_cld.points)
-
-    spect = np.zeros([L.shape[1], 3])
-
-    for j in range(L.shape[1]):
-        basis = L[:,j].reshape(1,-1).T
-        print(basis.shape)
-        print(mesh1.vertices.shape)
-        k = np.multiply(basis,mesh1.vertices)
-
-
-        spect = spect + np.multiply(basis,mesh1.vertices)
-
-    #spect = np.linalg.norm(spect, axis=0)
-    spect = spect * mesh1.area/mesh1.vertices.shape[0] #  #/ len(pt_cld.points)  # *mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
-    spect = np.sum(L, axis=1)
-
-    plt.plot(spect)
-    plt.title('Spectrum plot')
-    plt.show()
-
-
-    return spect
-
-
 def get_spectrum(L,VA,mesh1, pt_cld):
 
     #pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_poisson.ply")
@@ -77,9 +49,12 @@ def get_spectrum(L,VA,mesh1, pt_cld):
 
         spect = spect +( (weightv1 * L[i0,:] + weightv2 * L[i1,:] + weightv3 * L[i2,:] ))#/ (weightv1 + weightv2 + weightv3))
 
-    spect = np.square(np.asarray(spect)) *mesh1.area #/len(pt_cld.points)#/len(pt_cld.points)# *mesh1.area #/len(pt_cld.points) #*mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
 
-    plt.plot(spect)
+    spect *= ((4 * math.pi)/len(pt_cld.points) )
+    power = (len(pt_cld.points)/(4 * math.pi) ) * np.abs(spect)**2
+    #spect = np.square(np.asarray(spect)) *mesh1.area #/len(pt_cld.points)#/len(pt_cld.points)# *mesh1.area #/len(pt_cld.points) #*mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
+
+    plt.plot(power)
     plt.title('Spectrum plot')
     plt.show()
     return spect
@@ -181,7 +156,11 @@ def RadialMeanAccurate(S, Freq):
         print(ne)
 
         while (float(freq[ne]) < float((idx * fmax /nbin))):
+            if (ne == size2-1):
+                ne = ne-1
+                break
             ne = ne+1
+
 
 
 
