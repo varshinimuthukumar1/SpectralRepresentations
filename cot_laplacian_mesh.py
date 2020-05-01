@@ -6,25 +6,38 @@ import torch
 from vtkplotter import trimesh2vtk, show
 import matplotlib.pyplot as plt
 from scipy import linalg
+from scipy.sparse.linalg import eigs
 
 def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
 
-    #U, freq, basis = linalg.svd(matL)
-    #freq, basis = np.linalg.eig((matL))
-    #
-    freq, basis = scipy.linalg.eig(matL, matA)
+    U, freq, basis = linalg.svd(matL)
+    #freq, basis = eigs(A=matL, k=1000, M= matA)
 
-    freq = np.sqrt(freq)
+    #freq, basis = scipy.linalg.eig(matL, matA)
 
-    idx = freq.argsort()[::-1]
+
+
+    basis = np.multiply(matA, basis)
+
+    freq = np.sqrt((np.abs(freq)))#**2
+
+
+    idx = freq.argsort()
     freq = freq[idx]
 
     basis = basis[:, idx]
+    freq = np.around(freq, decimels= 3)
 
-    #basis = np.multiply(np.diag(matA), basis)
+    np.savetxt('text.txt', freq, fmt='%.10f')
+
+
+
+
+    #basis = basis[:,::4]
+    #freq = freq[::4]
 
     if plot == True:
-        scals = np.absolute(np.asarray(basis[:, 1]))
+        scals = np.absolute(np.asarray(basis[:, 4]))
         scals = scals / (np.linalg.norm(scals))
 
         vtmesh = trimesh2vtk(mesh1)
@@ -32,9 +45,10 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
 
         show(vtmesh, bg='w')
 
-        plt.plot((freq)**2)
+        plt.plot((freq))
         plt.title("frequency")
         plt.show()
+
 
     return freq, basis
 

@@ -24,9 +24,9 @@ def get_meshtriangle_distances(point, vertex_array):
 
     temp_dist = 1./temp_dist.transpose()
 
-    weightv1 = temp_dist[0]
-    weightv2 = temp_dist[1]
-    weightv3 = temp_dist[2]
+    weightv1 = temp_dist[0]/np.sum(temp_dist)
+    weightv2 = temp_dist[1]/np.sum(temp_dist)
+    weightv3 = temp_dist[2]/np.sum(temp_dist)
 
     return weightv1,weightv2,weightv3
 
@@ -49,7 +49,7 @@ def get_spectrum_projected(L,VA,mesh1,pt_cld ):
 
     #spect = np.linalg.norm(spect, axis=0)
     spect = spect * mesh1.area/mesh1.vertices.shape[0] #  #/ len(pt_cld.points)  # *mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
-    #spect = np.sum(L, axis=1)
+    spect = np.sum(L, axis=1)
 
     plt.plot(spect)
     plt.title('Spectrum plot')
@@ -75,9 +75,9 @@ def get_spectrum(L,VA,mesh1, pt_cld):
 
         weightv1,weightv2,weightv3 = get_meshtriangle_distances(np.array([pt_cld.points[j]]).reshape(1,-1), np.array([mesh1.vertices[i0],mesh1.vertices[i1],mesh1.vertices[i2]]))
 
-        spect = spect +( (weightv1 * L[i0,:] + weightv2 * L[i1,:] + weightv3 * L[i2,:] )/ (weightv1 + weightv2 + weightv3))
+        spect = spect +( (weightv1 * L[i0,:] + weightv2 * L[i1,:] + weightv3 * L[i2,:] ))#/ (weightv1 + weightv2 + weightv3))
 
-    spect = np.square(np.asarray(spect)) *mesh1.area /len(pt_cld.points)#/len(pt_cld.points)# *mesh1.area #/len(pt_cld.points) #*mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
+    spect = np.square(np.asarray(spect)) *mesh1.area #/len(pt_cld.points)#/len(pt_cld.points)# *mesh1.area #/len(pt_cld.points) #*mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
 
     plt.plot(spect)
     plt.title('Spectrum plot')
@@ -161,7 +161,7 @@ def get_radial_means_copy(S):
 def RadialMeanAccurate(S, Freq):
     size2 = len(S)
 
-    freq = np.sqrt(Freq)
+    freq = Freq #np.sqrt(Freq)
     fmax = np.amax(freq)
     nbin = 100
 
@@ -174,20 +174,22 @@ def RadialMeanAccurate(S, Freq):
 
     for idx in range(nbin):
 
-        if (ns == size2-1) or (ne == size2-1):
+        if ((ns == size2-2) or (ne == size2-2)):
             break
-
-        while (float(freq[ne]) < float((idx * fmax /nbin))):
-            ne = ne+1
 
         print(ns)
         print(ne)
 
+        while (float(freq[ne]) < float((idx * fmax /nbin))):
+            ne = ne+1
+
+
+
         R[idx] = statistics.mean(S[ns:ne+1]) #np.sum(S[ns:ne])/len(S[ns:ne])#statistics.mean(S[ns:ne])
         A[idx] = statistics.variance(S[ns:ne+1]) / R[idx] ** 2
 
-        ns = ne + 1
-        ne = ne + 2
+        ns = ne
+        ne = ne + 1
 
 
     R[0] = 0.1
