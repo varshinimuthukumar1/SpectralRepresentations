@@ -25,9 +25,10 @@ mesh1  = trimesh.load_mesh('data/1_sphere/unit_sphere.stl')
 
 # Get L matrix, i.e. Cotangent Laplacian matrix
 [L,VA] = cot_laplacian_mesh.get_cot_laplacian(mesh1.vertices, mesh1.faces)
+#np.savetxt('L.txt', L, fmt='%.10f')
+#np.savetxt('VA.txt', VA, fmt='%.10f')
 
-L = L.toarray()
-VA = VA.toarray()
+
 
 
 #matA = np.diag(np.divide(1.0,np.sqrt(VA)))
@@ -42,24 +43,24 @@ VA = VA.toarray()
 # Get frequencies and basis functins
 freq,basis = cot_laplacian_mesh.get_laplacian_basis_svd(mesh1,L,VA)
 
+trials = 10
 
-# Get spectrum
-#pt_cld1 = o3d.io.read_point_cloud("data/1_sphere/sphere_poisson.ply")
-pt_cld2 = o3d.io.read_point_cloud("data/1_sphere/unit_sphere_poisson.ply")
-pt_cld3 = o3d.io.read_point_cloud("data/1_sphere/unit_sphere_poisson3.ply")
-pt_cld4 = o3d.io.read_point_cloud("data/1_sphere/unit_sphere_poisson4.ply")
-#pt_cld5 = o3d.io.read_point_cloud("data/1_sphere/sphere_poisson5.ply")
+avg_spect = np.zeros(basis.shape[1])
 
-#spect1 = Spectral_analysis.get_spectrum(basis,VA,mesh1, pt_cld1)
-spect2 = Spectral_analysis.get_spectrum(basis,VA,mesh1, pt_cld2)
-spect3 = Spectral_analysis.get_spectrum(basis,VA,mesh1, pt_cld3)
-spect4 = Spectral_analysis.get_spectrum(basis,VA,mesh1, pt_cld4)
-#spect5 = Spectral_analysis.get_spectrum(basis,VA,mesh1, pt_cld5)
+for i in range(trials):
 
-spect = (+spect2 + spect3 + spect4 )/3
+    pcloud_name = "data/1_sphere/unit_sphere_random"+str(i)+".ply"
+    pt_cld = o3d.io.read_point_cloud(pcloud_name)
+    spect = Spectral_analysis.get_spectrum(basis, VA, mesh1, pt_cld)
+    avg_spect += spect
+
+avg_spect/= trials
+
+
 
 #Get radial means and anisotropy
 
-plt.plot (freq, spect)
+plt.plot (freq[1:], avg_spect[1:])
 plt.show()
-R,A = Spectral_analysis.RadialMeanAccurate(spect[1:],freq)
+R = Spectral_analysis.get_radial_means(avg_spect,freq)
+np.savetxt('spect_radial.txt', R, fmt='%.10f')

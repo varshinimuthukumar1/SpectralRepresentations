@@ -8,8 +8,11 @@ import matplotlib.pyplot as plt
 from scipy import linalg
 from scipy.sparse.linalg import eigsh
 from matplotlib import cm
+import tensorflow as tf
 
-def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
+def get_laplacian_tensor(mesh1,matL,matA, plot=True):
+    matL = tf.convert_to_tensor(matL.toarray())
+    matA = tf.convert_to_tensor(matA.toarray())
 
     #U, freq, basis = linalg.svd(matL)
     #freq, basis = eigs(A=matL, k=1000, M= matA)
@@ -18,8 +21,7 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
     matA = matA/np.sum(np.sum(matA))
     #freq, basis = eigsh(matL, 100, matA)
 
-    freq, basis = eigsh(matL, k=100, M=matA,
-                                          sigma=-0.000001)
+    freq, basis = eigsh(matL, k=500, M=matA,sigma=-0.000001)
 
 
 
@@ -39,7 +41,7 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
     basis = basis[:, idx]
     basis = np.around(basis, decimals= 9)
 
-    basis = basis/np.linalg.norm(basis)
+
 
     #np.savetxt('text.txt', freq, fmt='%.10f')
 
@@ -50,9 +52,10 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
     #freq = freq[::4]
 
     if plot == True:
-        emin = np.min(basis)
-        emax = np.max(basis)
-        scals = basis[:, 0]
+        basis1 = basis / np.linalg.norm(basis)
+        emin = np.min(basis1)
+        emax = np.max(basis1)
+        scals = basis1[:, 0]
 
         #scals = scals / np.linalg.norm(basis)
         #colm = cm.get_cmap('jet', [emin,emax])
@@ -66,6 +69,65 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
         plt.title("frequency")
         plt.show()
 
+
+    return freq, basis
+
+
+def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
+
+    #U, freq, basis = linalg.svd(matL)
+    #freq, basis = eigs(A=matL, k=1000, M= matA)
+
+    #freq, basis = scipy.linalg.eig(matL, matA)
+    matA = matA/np.sum(np.sum(matA))
+    #freq, basis = eigsh(matL, 100, matA)
+
+    freq, basis = eigsh(matL, k=500, M=matA,sigma=-0.000001)
+
+
+
+    #basis = basis * matA[None,:]
+
+    #for i in np.arange(len(area)):
+    #    basis[i,:] = area[i] * basis[i,:]
+
+    #freq = np.sqrt((np.abs(freq)))#**2
+
+    freq = -1 * freq
+    basis = -1 * basis
+
+    idx = freq.argsort()
+    freq = freq[idx]
+
+    basis = basis[:, idx]
+    basis = np.around(basis, decimals= 9)
+
+
+    np.savetxt('eigen_random.txt', freq, fmt='%.10f')
+
+
+
+
+    #basis = basis[:,::4]
+    #freq = freq[::4]
+
+    if plot == True:
+        basis1 = basis / np.linalg.norm(basis)
+        emin = np.min(basis1)
+        emax = np.max(basis1)
+        scals = basis1[:, 5]
+
+        #scals = scals / np.linalg.norm(basis)
+        #colm = cm.get_cmap('jet', [emin,emax])
+
+        vtmesh = trimesh2vtk(mesh1)
+        vtmesh.pointColors(scals, cmap='jet')
+
+        show(vtmesh, bg='w')
+
+        plt.plot((freq))
+        plt.title("frequency")
+        plt.show()
 
     return freq, basis
 

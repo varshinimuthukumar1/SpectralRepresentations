@@ -50,17 +50,23 @@ def get_spectrum(L,VA,mesh1, pt_cld):
         spect = spect +( (weightv1 * L[i0,:] + weightv2 * L[i1,:] + weightv3 * L[i2,:] ))#/ (weightv1 + weightv2 + weightv3))
 
 
-    spect *= ((4 * math.pi)/len(pt_cld.points) )
-    power = (len(pt_cld.points)/(4 * math.pi) ) * np.abs(spect)**2
+
+
     #spect = np.square(np.asarray(spect)) *mesh1.area #/len(pt_cld.points)#/len(pt_cld.points)# *mesh1.area #/len(pt_cld.points) #*mesh1.area #/ L.shape[0]#*np.sum(VA) #/mesh.faces.shape[0] # L.shape[0]#
 
-    plt.plot(power)
+
+    spect *= ((mesh1.area) / len(pt_cld.points))
+
+    power = (len(pt_cld.points) / (mesh1.area)) * np.abs(spect) ** 2
+    power /= (mesh1.area)
+
+    plt.plot(power[1:])
     plt.title('Spectrum plot')
     plt.show()
-    return spect
+    return power
 
 # split frequency in bands of 2l +1 (as mentioned in the paper)
-def get_radial_means(spectrum):
+def get_radial_means(spectrum,freq):
 
 
     spectrum= np.asarray(spectrum)
@@ -71,28 +77,27 @@ def get_radial_means(spectrum):
 
     ns = 0
     i = 0
-    l = 0.75
-    ne = 2
+    l = 0
+    ne = 0
 
 
     while(ne < len(spectrum)):
 
         ne = round(ns + (2 * l + 1))
-        R.append(statistics.mean(spectrum[ns:ne]))
-        A.append(statistics.variance(spectrum[ns:ne]) / R[i] ** 2)
+        print(ns,ne)
+        print(len(spectrum[ns:ne]))
+        R.append(np.sum(spectrum[ns:ne])/len(spectrum[ns:ne]))#statistics.mean(spectrum[ns:ne]))
+        #A.append(statistics.variance(spectrum[ns:ne]) / R[i] ** 2)
         l += 1
         i += 1
         ns = ne + 1
 
-    R[0] = 0.1
-    plt.plot(R)
+    #R[0] = 0.1
+    plt.plot(R[1:])
     plt.title('Radial means')
-    plt.plot(A)
-    plt.title('Anisotropy')
-    plt.legend()
     plt.show()
 
-    return R,A
+    return R
 
 
 # Implementation as per the code of the paper
@@ -181,3 +186,39 @@ def RadialMeanAccurate(S, Freq):
     plt.show()
 
     return R, A
+
+def get_radial_means_spherical(spect):
+
+    l = 0
+    m = 0
+    i = 0
+
+    ne =0
+    ns = 0
+
+    R =[]
+
+
+    while(ne < len(spect)):
+
+        while(m< 2* l +1):
+            ne = ne+1
+            m = m+1
+        l+=1
+        m=0
+
+        R.append(np.sum(spect[ns:ne])/len(spect[ns:ne+1]))
+
+        ns = ne
+        if ne == len(spect):
+            break
+
+
+    R[0] = 0.1
+    plt.plot(R)
+    plt.title('Radial means')
+    plt.show()
+
+    return R
+
+
