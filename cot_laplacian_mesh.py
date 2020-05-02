@@ -82,7 +82,7 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
     matA = matA/np.sum(np.sum(matA))
     #freq, basis = eigsh(matL, 100, matA)
 
-    freq, basis = eigsh(matL, k=500, M=matA,sigma=-0.000001)
+    freq, basis = eigsh(matL, k=1000, M=matA,sigma=-0.000001)
 
 
 
@@ -103,7 +103,7 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
     basis = np.around(basis, decimals= 9)
 
 
-    np.savetxt('eigen_random.txt', freq, fmt='%.10f')
+    np.savetxt('eigen.txt', freq, fmt='%.10f')
 
 
 
@@ -115,7 +115,7 @@ def get_laplacian_basis_svd(mesh1,matL,matA, plot=True):
         basis1 = basis / np.linalg.norm(basis)
         emin = np.min(basis1)
         emax = np.max(basis1)
-        scals = basis1[:, 5]
+        scals = basis1[:,2]
 
         #scals = scals / np.linalg.norm(basis)
         #colm = cm.get_cmap('jet', [emin,emax])

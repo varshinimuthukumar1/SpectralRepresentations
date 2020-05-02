@@ -18,15 +18,14 @@ def get_weights_frompaper():
 
 def get_meshtriangle_distances(point, vertex_array):
 
-    temp_dist = distance.cdist(point, vertex_array)
+    temp_dist = distance.cdist(point, vertex_array, metric='euclidean')
 
+    temp_dist = 1./temp_dist#.transpose()
+    print(temp_dist)
 
-
-    temp_dist = 1./temp_dist.transpose()
-
-    weightv1 = temp_dist[0]/np.sum(temp_dist)
-    weightv2 = temp_dist[1]/np.sum(temp_dist)
-    weightv3 = temp_dist[2]/np.sum(temp_dist)
+    weightv1 = temp_dist[:,0]/np.sum(temp_dist)
+    weightv2 = temp_dist[:,1]/np.sum(temp_dist)
+    weightv3 = temp_dist[:,2]/np.sum(temp_dist)
 
     return weightv1,weightv2,weightv3
 
@@ -45,6 +44,9 @@ def get_spectrum(L,VA,mesh1, pt_cld):
         i1 = mesh1.faces[i, 1]
         i2 = mesh1.faces[i, 2]
 
+        a = mesh1.vertices[i0]
+        b = mesh1.vertices[i1]
+        arr = np.array([mesh1.vertices[i0], mesh1.vertices[i1], mesh1.vertices[i2]])
         weightv1,weightv2,weightv3 = get_meshtriangle_distances(np.array([pt_cld.points[j]]).reshape(1,-1), np.array([mesh1.vertices[i0],mesh1.vertices[i1],mesh1.vertices[i2]]))
 
         spect = spect +( (weightv1 * L[i0,:] + weightv2 * L[i1,:] + weightv3 * L[i2,:] ))#/ (weightv1 + weightv2 + weightv3))

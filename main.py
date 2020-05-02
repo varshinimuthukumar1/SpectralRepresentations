@@ -21,35 +21,27 @@ from scipy.special import sph_harm
 
 
 # Read mesh
-mesh1  = trimesh.load_mesh('data/1_sphere/unit_sphere.stl')
+mesh1  = trimesh.load_mesh('data/1_sphere/unit_sphere_dense.stl')
 
 # Get L matrix, i.e. Cotangent Laplacian matrix
 [L,VA] = cot_laplacian_mesh.get_cot_laplacian(mesh1.vertices, mesh1.faces)
-#np.savetxt('L.txt', L, fmt='%.10f')
-#np.savetxt('VA.txt', VA, fmt='%.10f')
+
+#np.savetxt('L.txt', str(L), fmt='%.10f')
+#np.savetxt('VA.txt', str(VA), fmt='%.10f')
 
 
-
-
-#matA = np.diag(np.divide(1.0,np.sqrt(VA)))
-#matA = np.linalg.inv(np.sqrt(VA))
-
-#matL = L.toarray()
-# Normalize L matrix with area, or not
-#matL = matA * np.asarray(L.toarray()) * matA
-
-#matL = np.linalg.inv(np.diag(matA)) *  np.asarray(L.toarray())
-
-# Get frequencies and basis functins
+# Get frequencies and basis functions
+#L = np.loadtxt('L.txt')
+#VA = np.loadtxt('VA.txt')
 freq,basis = cot_laplacian_mesh.get_laplacian_basis_svd(mesh1,L,VA)
 
-trials = 10
+trials = 5
 
 avg_spect = np.zeros(basis.shape[1])
 
 for i in range(trials):
 
-    pcloud_name = "data/1_sphere/unit_sphere_random"+str(i)+".ply"
+    pcloud_name = "data/1_sphere/unit_sphere_poisson"+str(i)+".ply"
     pt_cld = o3d.io.read_point_cloud(pcloud_name)
     spect = Spectral_analysis.get_spectrum(basis, VA, mesh1, pt_cld)
     avg_spect += spect
@@ -63,4 +55,4 @@ avg_spect/= trials
 plt.plot (freq[1:], avg_spect[1:])
 plt.show()
 R = Spectral_analysis.get_radial_means(avg_spect,freq)
-np.savetxt('spect_radial.txt', R, fmt='%.10f')
+np.savetxt('spect_radial_poisson.txt', R, fmt='%.10f')
