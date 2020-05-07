@@ -19,9 +19,11 @@ import math as m
 from scipy.special import sph_harm
 
 
+mesh_name = 'data/7_sphere_100k/unitsphere.stl'
+point_cloud = 'data/7_sphere_100k/poisson430'
 
 # Read mesh
-mesh1  = trimesh.load_mesh('data/1_sphere/unit_sphere_dense.stl')
+mesh1  = trimesh.load_mesh(mesh_name)
 
 # Get L matrix, i.e. Cotangent Laplacian matrix
 [L,VA] = cot_laplacian_mesh.get_cot_laplacian(mesh1.vertices, mesh1.faces)
@@ -33,26 +35,30 @@ mesh1  = trimesh.load_mesh('data/1_sphere/unit_sphere_dense.stl')
 # Get frequencies and basis functions
 #L = np.loadtxt('L.txt')
 #VA = np.loadtxt('VA.txt')
+
 freq,basis = cot_laplacian_mesh.get_laplacian_basis_svd(mesh1,L,VA)
 
-trials = 5
+#freq = np.loadtxt('eigen.txt')
+#basis = np.loadtxt('basis.txt')
+
+trials = 2
 
 avg_spect = np.zeros(basis.shape[1])
 
 for i in range(trials):
 
-    pcloud_name = "data/1_sphere/unit_sphere_poisson"+str(i)+".ply"
+    pcloud_name = point_cloud+str(i)+".ply"
     pt_cld = o3d.io.read_point_cloud(pcloud_name)
     spect = Spectral_analysis.get_spectrum(basis, VA, mesh1, pt_cld)
     avg_spect += spect
 
-avg_spect/= trials
-
+avg_spect= avg_spect/trials
+np.savetxt('spectrum.txt', avg_spect, fmt='%.10f')
 
 
 #Get radial means and anisotropy
 
 plt.plot (freq[1:], avg_spect[1:])
 plt.show()
-R = Spectral_analysis.get_radial_means(avg_spect,freq)
-np.savetxt('spect_radial_poisson.txt', R, fmt='%.10f')
+R = Spectral_analysis.RadialMeanAccurate(freq)
+np.savetxt('radialmeans.txt', R, fmt='%.10f')

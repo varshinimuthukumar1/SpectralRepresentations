@@ -21,7 +21,6 @@ def get_meshtriangle_distances(point, vertex_array):
     temp_dist = distance.cdist(point, vertex_array, metric='euclidean')
 
     temp_dist = 1./temp_dist#.transpose()
-    print(temp_dist)
 
     weightv1 = temp_dist[:,0]/np.sum(temp_dist)
     weightv2 = temp_dist[:,1]/np.sum(temp_dist)
@@ -32,6 +31,7 @@ def get_meshtriangle_distances(point, vertex_array):
 
 def get_spectrum(L,VA,mesh1, pt_cld):
 
+    #L = np.loadtxt('basis.txt')
     #pt_cld = o3d.io.read_point_cloud("data/1_sphere/sphere_poisson.ply")
     closest_points = trimesh.proximity.closest_point(mesh1, pt_cld.points)
 
@@ -59,88 +59,20 @@ def get_spectrum(L,VA,mesh1, pt_cld):
 
     spect *= ((mesh1.area) / len(pt_cld.points))
 
-    power = (len(pt_cld.points) / (mesh1.area)) * np.abs(spect) ** 2
+    power = (len(pt_cld.points) / (mesh1.area)) * np.abs(spect)** 2
     power /= (mesh1.area)
+
 
     plt.plot(power[1:])
     plt.title('Spectrum plot')
     plt.show()
     return power
 
-# split frequency in bands of 2l +1 (as mentioned in the paper)
-def get_radial_means(spectrum,freq):
 
 
-    spectrum= np.asarray(spectrum)
-    size2 = spectrum.shape
-    print(size2)
-    R = []
-    A = []
-
-    ns = 0
-    i = 0
-    l = 0
-    ne = 0
-
-
-    while(ne < len(spectrum)):
-
-        ne = round(ns + (2 * l + 1))
-        print(ns,ne)
-        print(len(spectrum[ns:ne]))
-        R.append(np.sum(spectrum[ns:ne])/len(spectrum[ns:ne]))#statistics.mean(spectrum[ns:ne]))
-        #A.append(statistics.variance(spectrum[ns:ne]) / R[i] ** 2)
-        l += 1
-        i += 1
-        ns = ne + 1
-
-    #R[0] = 0.1
-    plt.plot(R[1:])
-    plt.title('Radial means')
-    plt.show()
-
-    return R
-
-
-# Implementation as per the code of the paper
-def get_radial_means_copy(S):
-
-    R = np.zeros((math.ceil(math.sqrt(len(S)))))
-    A = np.zeros((math.ceil(math.sqrt(len(S)))))
-
-
-    ns = 1
-    nl = 2
-    i = 1
-
-
-    while (ns < len(S)) and (i<len(R)):
-
-        ne = min(ns + nl - 1, len(S))
-        print(ns)
-        print(ne)
-        print(S[ns:ne])
-        R[i] = statistics.mean(S[ns:ne+1])
-        A[i] = statistics.variance(S[ns:ne+1])/ R[i] ** 2
-        i = i + 1
-        ns = ns + nl
-        nl = nl + 2
-
-
-
-    R[0]= 0.1
-
-    plt.plot(R)
-    plt.title('Radial means')
-    plt.show()
-    plt.plot(A)
-    plt.title('Anisotropy')
-    plt.show()
-
-    return R,A
-
-
-def RadialMeanAccurate(S, Freq):
+def RadialMeanAccurate(Freq):
+    S = np.loadtxt('spectrum.txt')
+    #Freq = np.loadtxt('eigen.txt')
     size2 = len(S)
 
     freq = Freq #np.sqrt(Freq)
@@ -159,8 +91,8 @@ def RadialMeanAccurate(S, Freq):
         if ((ns == size2-2) or (ne == size2-2)):
             break
 
-        print(ns)
-        print(ne)
+
+
 
         while (float(freq[ne]) < float((idx * fmax /nbin))):
             if (ne == size2-1):
@@ -168,10 +100,13 @@ def RadialMeanAccurate(S, Freq):
                 break
             ne = ne+1
 
+        print(ne - ns)
+        print(S[ns], S[ne])
 
 
 
-        R[idx] = statistics.mean(S[ns:ne+1]) #np.sum(S[ns:ne])/len(S[ns:ne])#statistics.mean(S[ns:ne])
+
+        R[idx] = np.sum(S[ns:ne])/len(S[ns:ne+1]) #np.sum(S[ns:ne])/len(S[ns:ne])#statistics.mean(S[ns:ne])
         A[idx] = statistics.variance(S[ns:ne+1]) / R[idx] ** 2
 
         ns = ne
@@ -189,7 +124,10 @@ def RadialMeanAccurate(S, Freq):
 
     return R, A
 
-def get_radial_means_spherical(spect):
+def get_radial_means_spherical():
+
+    spect = np.loadtxt('spectrum.txt')
+
 
     l = 0
     m = 0
@@ -209,7 +147,13 @@ def get_radial_means_spherical(spect):
         l+=1
         m=0
 
-        R.append(np.sum(spect[ns:ne])/len(spect[ns:ne+1]))
+        print(spect[ns:ne])
+        print(sum(spect[ns:ne]))
+        print(len(spect[ns:ne]))
+        print(np.sum(spect[ns:ne])/len(spect[ns:ne]))
+
+
+        R.append(np.sum(spect[ns:ne])/len(spect[ns:ne]))
 
         ns = ne
         if ne == len(spect):
