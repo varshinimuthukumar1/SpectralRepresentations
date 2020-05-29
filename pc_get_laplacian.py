@@ -126,7 +126,7 @@ def get_laplacian_pc(ptcloud_name):
 
         # compute average size of the pointcloud parallely
         v = np.linalg.norm(v, axis=1)
-        avg_size_calc.append( np.mean(avg_size))
+        avg_size_calc.append( np.mean(v))
 
     print('VORONOI AREA CALCULATION COMPLETED..............')
     avg_size = np.mean(np.asarray(avg_size_calc))
