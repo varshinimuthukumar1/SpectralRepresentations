@@ -35,7 +35,7 @@ def voronoi_areas(pt_tgt, normal):
 
 def get_laplacian_pc(ptcloud_name):
 
-    avg_size = 0.6
+    avg_size = 0.5#0.59999999999
     rho = 3
     eps = 2*  avg_size * rho
 
@@ -43,6 +43,8 @@ def get_laplacian_pc(ptcloud_name):
     ptcloud = o3d.io.read_point_cloud(ptcloud_name)
     if len(ptcloud.points) == 0:
         print('Point cloud not read correctly')
+    else :
+        print('POINT CLOUD READ......')
 
     # plot = True
     # if plot == True:
@@ -93,7 +95,7 @@ def get_laplacian_pc(ptcloud_name):
 
     # get neighbouring points in the point cloud and append it in a long list
     for point in ptcloud.points:
-        [k, idx, _] = pcd_tree.search_radius_vector_3d(point, eps)
+        [k, idx, _] = pcd_tree.search_radius_vector_3d(point, 0.3)
         k_list.append(k)
         idx_list.append(idx)
         n_list.append(np.asarray(ptcloud.points)[idx,:])
@@ -101,6 +103,7 @@ def get_laplacian_pc(ptcloud_name):
 
     shape_pts = np.asarray(ptcloud.points).shape
     pt_area = []
+    avg_size_calc = []
     # for each point use the neighbours to construct voronoi diagram and get areas
     for i in np.arange(shape_pts[0]):
         neighbours = n_list[i]
@@ -108,24 +111,35 @@ def get_laplacian_pc(ptcloud_name):
         point = np.tile(point,(neighbours.shape[0], 1))
         normal = np.tile(ptcloud.normals[i], (neighbours.shape[0], 1))
         v = np.subtract( neighbours , point)
+
         dist = np.multiply(normal, v)
         dist = np.sum(dist, axis=1)
 
         k = dist[:, None]
         projected_points = neighbours - np.multiply(normal , dist[:, None])
 
-        #np.savetxt('strin.xyz', projected_points, delimiter=' ')
+        np.savetxt('strin.xyz', projected_points, delimiter=' ')
 
         areas = voronoi_areas(projected_points, ptcloud.normals[i])
 
         pt_area.append([np.asarray(ptcloud.points)[i], areas[0]] )
+
+        # compute average size of the pointcloud parallely
+        v = np.linalg.norm(v, axis=1)
+        avg_size_calc.append( np.mean(avg_size))
+
+    print('VORONOI AREA CALCULATION COMPLETED..............')
+    avg_size = np.mean(np.asarray(avg_size_calc))
+
+    print('AVERAGE SIZE OF POINTS DETERMINED TO BE..............',avg_size )
 
     #np.savetxt('areas.txt', np.asarray(pt_area), fmt='%.10f')
 
     # Calculate the q and b matrix using this information
     # pt_area has the area of the points in same order as point cloud,  appended to the point coordinates as well
 
-    t = avg_size #* 0.5 # avverage distance between points in the tangent plane squared
+    #avg_size = 1
+    t = 1#avg_size *avg_size #* 0.5 # avverage distance between points in the tangent plane squared
     #######
 
 
@@ -145,6 +159,6 @@ def get_laplacian_pc(ptcloud_name):
         q[i][i] = np.sum(q[i], axis=0) * -1
         b[i][i] = pt_area[i][1]
 
-    freq,basis = sa_pc.basis_freq_pc(q,b,ptcloud)
+    freq,basis = sa_pc.basis_freq_pc(q,b,ptcloud,t,avg_size)
 
     return

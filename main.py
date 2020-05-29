@@ -1,26 +1,30 @@
+import open3d as o3d
+
+
 import cot_laplacian_mesh
 import Spectral_analysis
+import display_results
 import trimesh
-import meshio
-import open3d as o3d
-import numpy as np
-import matplotlib
-from vtkplotter import trimesh2vtk, show
-from matplotlib import cm
-from colorspacious import cspace_converter
-from sklearn.preprocessing import normalize
-import torch
-from scipy.sparse.linalg import eigs
+# import meshio
+
+# import numpy as np
+# import matplotlib
+# from vtkplotter import trimesh2vtk, show
+# from matplotlib import cm
+# from colorspacious import cspace_converter
+# from sklearn.preprocessing import normalize
+# import torch
+# from scipy.sparse.linalg import eigs
 import matplotlib.pyplot as plt
-import spherical_harmonics
-from math import pi
+# import spherical_harmonics
+# from math import pi
 import numpy as np
-import math as m
-from scipy.special import sph_harm
+# import math as m
+# from scipy.special import sph_harm
 
 # importing my modules
 import pc_get_laplacian as pcl
-
+import datetime
 
 def main_mesh():
 
@@ -69,8 +73,9 @@ def main_mesh():
 
 
 def main_pointcloud():
-    pcl.get_laplacian_pc('data/8_pc_sphere_2562/sphere_poisson_2900.ply')
 
+    pcl.get_laplacian_pc('data/8_pc_sphere_2562/sphere_poisson_2900.ply')
+    #display_results.show_plots('data/8_pc_sphere_2562/sphere_poisson_2900.ply')
     return
 
 

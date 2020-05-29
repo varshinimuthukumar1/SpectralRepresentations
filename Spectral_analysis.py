@@ -4,7 +4,7 @@ import math
 import trimesh.proximity
 import trimesh
 import statistics
-import open3d as o3d
+
 from scipy.spatial import distance
 
 
