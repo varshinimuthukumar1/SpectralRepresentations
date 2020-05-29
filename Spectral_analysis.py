@@ -7,6 +7,7 @@ import statistics
 import open3d as o3d
 from scipy.spatial import distance
 
+
 def get_weights_frompaper():
     valence = 6
     cos2pin = math.cos(2.0 * math.pi / valence)
