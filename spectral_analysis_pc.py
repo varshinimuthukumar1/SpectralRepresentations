@@ -11,8 +11,8 @@ def basis_freq_pc(q,b, ptcloud,t,avg_size, plot = True):
     print('STARTING EIGENDECOMPOSITION OF Lmatrix..............')
     freq, basis = eigsh(q, k=25, M=b, sigma=0.00001)
     print('EIGENDECOMPOSITION COMPLETED..............')
-    freq = -1 * freq
-    basis = -1 * basis
+    #freq = -1 * freq
+    #basis = -1 * basis
 
     idx = freq.argsort()
     freq = freq[idx]
@@ -25,7 +25,9 @@ def basis_freq_pc(q,b, ptcloud,t,avg_size, plot = True):
     basis_txt = 'basis_' +str(t) + str(avg_size) + str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')) + '.txt'
 
     np.savetxt(eigen_txt, freq, fmt='%.10f')
+    np.savetxt('eigen.txt', freq, fmt='%.10f')
     np.savetxt(basis_txt, basis, fmt='%.10f')
+    np.savetxt('basis.txt', basis, fmt='%.10f')
 
     print(freq)
 

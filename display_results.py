@@ -11,20 +11,19 @@ def show_plots(ptcloud_name):
 
     plot = True
     if plot == True:
-        freq = np.loadtxt('eigen_0.1.txt')
-        basis = np.loadtxt('basis_0.1.txt')
+        freq = np.loadtxt('eigen.txt')
+        basis = np.loadtxt('basis.txt')
 
         plt.plot((freq))
         plt.title("frequency")
         plt.show()
 
-        basis1 = basis / np.linalg.norm(basis)
+        basis1 = basis #/ np.linalg.norm(basis)
         emin = np.min(basis1)
         emax = np.max(basis1)
-        scals = basis1[:, 2]
-        #scals = scals / np.linalg.norm(scals)
+        scals = basis1[:, 1]
+        scals = scals / np.linalg.norm(scals)
 
-        # scals = scals / np.linalg.norm(basis)
 
         color = [cm.jet(x) for x in scals]
         color = np.asarray(color)

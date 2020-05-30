@@ -1,8 +1,8 @@
 import open3d as o3d
 
 
-import cot_laplacian_mesh
-import Spectral_analysis
+from laplacian_mesh import cot_laplacian_mesh
+from Spectral_analysis import Spectral_analysis
 import display_results
 import trimesh
 # import meshio
@@ -23,8 +23,16 @@ import numpy as np
 # from scipy.special import sph_harm
 
 # importing my modules
-import pc_get_laplacian as pcl
+from laplacian_pc import pc_get_laplacian as pcl
 import datetime
+import os
+
+def create_result_folder():
+    directory_path = os.getcwd() + '/results/'
+    mydir = os.path.join(directory_path, datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+    if not os.path.isfile(mydir):
+        os.makedirs(mydir)
+    return mydir
 
 def main_mesh():
 
@@ -72,12 +80,16 @@ def main_mesh():
     return
 
 
-def main_pointcloud():
+def main_pointcloud(mydir):
 
-    pcl.get_laplacian_pc('data/8_pc_sphere_2562/sphere_poisson_2900.ply')
+    freq,basis = pcl.get_lbo_pc('data/8_pc_sphere_2562/sphere_poisson_2900.ply',mydir)
+
+
+
     #display_results.show_plots('data/8_pc_sphere_2562/sphere_poisson_2900.ply')
     return
 
 
 if __name__ == '__main__':
-    main_pointcloud()
+    mydir = create_result_folder()
+    main_pointcloud(mydir)
