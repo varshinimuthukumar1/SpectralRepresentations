@@ -27,6 +27,8 @@ def get_meshtriangle_distances(point, vertex_array):
     weightv2 = temp_dist[:,1]/np.sum(temp_dist)
     weightv3 = temp_dist[:,2]/np.sum(temp_dist)
 
+    print(weightv3 + weightv2 + weightv1)
+
     return weightv1,weightv2,weightv3
 
 
@@ -161,7 +163,7 @@ def get_radial_means_spherical():
             break
 
 
-    R[0] = 0.1
+    #R[0] = 0.1
     plt.plot(R)
     plt.title('Radial means')
     plt.show()

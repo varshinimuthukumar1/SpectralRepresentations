@@ -111,4 +111,3 @@ def get_cot_laplacian(verts, tris):
         vertex_area[:len(bc)] += bc
     VA = sparse.spdiags(vertex_area, 0, len(verts), len(verts))
     return L, VA
-

@@ -21,7 +21,7 @@ def show_plots(ptcloud_name):
         basis1 = basis #/ np.linalg.norm(basis)
         emin = np.min(basis1)
         emax = np.max(basis1)
-        scals = basis1[:, 1]
+        scals = basis1[:, 24]
         scals = scals / np.linalg.norm(scals)
 
 
@@ -50,3 +50,25 @@ def show_plots(ptcloud_name):
         plt.show()
 
         return
+
+def show_spectrum(power= None):
+
+    if power is None:
+        power = np.loadtxt('power.txt', delimiter=',')
+    plt.plot(power)
+    plt.title("Power spectrum")
+    plt.show()
+
+    return
+
+
+def show_radialmeans(radialmeans= None):
+
+    if radialmeans is None:
+        radialmeans = np.loadtxt('radialmeans.txt', delimiter=',')
+    plt.plot(radialmeans[4:])
+    plt.title("Radial means")
+    plt.show()
+
+    return
+
