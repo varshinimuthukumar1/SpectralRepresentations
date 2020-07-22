@@ -7,7 +7,8 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 import open3d as o3d
 
-
+import io_utils
+import utils
 lmax = 20
 avg_spect = np.zeros(lmax)
 for i in range(1):
@@ -40,9 +41,12 @@ for i in range(1):
 
     pcd = o3d.geometry.PointCloud()
     pcd.points = o3d.utility.Vector3dVector(xyz)
-    o3d.visualization.draw_geometries([pcd])
+    #o3d.visualization.draw_geometries([pcd])
     o3d.io.write_point_cloud("random.ply", pcd)
 
+    xyz = io_utils.read_pointcloud('1_sampled_poisson_100.ply')
+    r,theta,phi = utils.cart2sph(xyz[:, 0], xyz[:, 1], xyz[:, 2] )
+    N = xyz.shape[0]
     # ------------------------------------------------------------------------------
 
 
@@ -70,5 +74,5 @@ for i in range(1):
         spect[l] = C1
     avg_spect += spect
 
-plt.plot(avg_spect)
+plt.plot(avg_spect[1:])
 plt.show()
