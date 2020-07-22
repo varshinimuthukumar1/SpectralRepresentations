@@ -1,8 +1,11 @@
+<<<<<<< HEAD
 import os,sys
 
 
 
 
+=======
+>>>>>>> 853f09313fb4406c8395a06420856335baba00ff
 import torch
 import math
 import numpy as np
@@ -10,6 +13,12 @@ import matplotlib.pyplot as plt
 
 ## import my modules
 
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> 853f09313fb4406c8395a06420856335baba00ff
 def compute_fourier_spectrum2D(points):
 
     n_points = points.shape[0]
@@ -70,7 +79,10 @@ def bat_compute_fourier_spectrum2D(bat_points):
 
     spectrum_resolution = 64
     freqstep = 1
+<<<<<<< HEAD
     cancel_DC = True
+=======
+>>>>>>> 853f09313fb4406c8395a06420856335baba00ff
 
     xlow = - spectrum_resolution / 2
     xhigh = spectrum_resolution / 2
@@ -85,7 +97,10 @@ def bat_compute_fourier_spectrum2D(bat_points):
     #grid = grid.to("cuda")
     fp = torch.tensordot(bat_points, grid, dims=([2], [1]))
 
+<<<<<<< HEAD
     #torch.cuda.empty_cache()
+=======
+>>>>>>> 853f09313fb4406c8395a06420856335baba00ff
     angle = torch.mul(fp, 2 * math.pi)
     angle = torch.mean(angle, dim=2)
     realCoeff = torch.cos(angle)
@@ -99,6 +114,7 @@ def bat_compute_fourier_spectrum2D(bat_points):
 
     return power
 
+<<<<<<< HEAD
 def bat_compute_radialmeans(bat_points):
 
 
@@ -234,3 +250,5 @@ def bat_compute_radialmeanscirc(bat_points):
     power = torch.mean(power, dim=0)
     radial_means = 0
     return radial_means,power
+=======
+>>>>>>> 853f09313fb4406c8395a06420856335baba00ff

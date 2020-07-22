@@ -10,9 +10,15 @@ import cv2
 import os
 
 ## my modules
+<<<<<<< HEAD
 import move_points.io_utils as io_utils
 from move_points.Fourier import *
 from move_points.Fourier import fourier_loss
+=======
+import io_utils
+from Fourier import *
+from Fourier import fourier_loss
+>>>>>>> 853f09313fb4406c8395a06420856335baba00ff
 import utils
 from sampler import sampler
 
@@ -44,6 +50,7 @@ def test_fourier_computation_tf(opt):
 
     return
 
+<<<<<<< HEAD
 def test_radialmeans_computation(opt):
 
 
@@ -72,6 +79,8 @@ def test_radialmeans_computation(opt):
 
     return
 
+=======
+>>>>>>> 853f09313fb4406c8395a06420856335baba00ff
 
 def fouriercomputation_2Dpoints(opt):
     #ptcloud_points = io_utils.read_pointcloud(opt.sample_patch)
@@ -145,6 +154,7 @@ def samples_generator(opt):
 
     return
 
+<<<<<<< HEAD
 def create_target(opt):
 
     for i in np.arange(15):
@@ -193,5 +203,7 @@ def create_target(opt):
 
 
 
+=======
+>>>>>>> 853f09313fb4406c8395a06420856335baba00ff
 
 
