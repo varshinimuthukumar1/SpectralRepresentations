@@ -106,7 +106,7 @@ def bat_compute_radialmeans(bat_points):
     def get_spectrum(grid, bat_points):
 
         grid = grid.expand(n_patches, dim_points, spectrum_resolution, spectrum_resolution)
-        # grid = grid.to("cuda")
+        grid = grid.to("cuda")
         fp = torch.tensordot(bat_points, grid, dims=([2], [1]))
 
         # torch.cuda.empty_cache()
@@ -138,11 +138,7 @@ def bat_compute_radialmeans(bat_points):
 
     uu, vv = torch.meshgrid(u, v)
     grid = torch.stack((uu, vv))
-    grid = grid.float()
-    grid2 = grid.clone().detach().numpy()
-    plt.scatter(grid2[0, :, :].flatten(), grid2[1, :, :].flatten())
-    plt.savefig('grid.png')
-    plt.clf()
+
 
     power = get_spectrum(grid, bat_points)
 
@@ -155,11 +151,13 @@ def bat_compute_radialmeans(bat_points):
     print(power[32,32])
 
     for i in np.arange(0, max_r, step_r ):
+        print(power.get_device())
+
 
         if i ==0:
 
-            masked = torch.where(((r<(i+ step_r)) ), power, torch.zeros(power.shape) )
-            masked = torch.where(r>i, masked, torch.zeros(power.shape))
+            masked = torch.where(((r<(i+ step_r)) ).to("cuda"), power.to("cuda"), torch.zeros(power.shape).to("cuda") )
+            masked = torch.where((r>i).to("cuda"), masked, torch.zeros(power.shape).to("cuda"))
             masked /= torch.nonzero(masked).size(0)
             masked = masked.unsqueeze(0)
 
@@ -167,8 +165,8 @@ def bat_compute_radialmeans(bat_points):
 
         else:
 
-            masked = torch.where(((r < (i + step_r))), power, torch.zeros(power.shape))
-            masked = torch.where(r > i, masked, torch.zeros(power.shape))
+            masked = torch.where(((r < (i + step_r))).to("cuda"), power, torch.zeros(power.shape).to("cuda"))
+            masked = torch.where((r > i).to("cuda"), masked, torch.zeros(power.shape).to("cuda"))
             masked /= torch.nonzero(masked).size(0)
             masked = masked.unsqueeze(0)
 
@@ -176,61 +174,5 @@ def bat_compute_radialmeans(bat_points):
 
 
     radialmeans =torch.sum(radialmeans, dim=(1,2))
-    radialmeans = torch.where(radialmeans== radialmeans, radialmeans, torch.zeros(radialmeans.shape))
+    radialmeans = torch.where((radialmeans== radialmeans).to("cuda"), radialmeans.to("cuda"), torch.zeros(radialmeans.shape).to("cuda"))
     return radialmeans, power
-
-def bat_compute_radialmeanscirc(bat_points):
-
-    assert bat_points is not None, "No input to the function bat_compute_radialmeans"
-
-    n_patches = bat_points.shape[0]
-    n_points = bat_points.shape[1]
-    dim_points = bat_points.shape[2]
-
-    spectrum_resolution = 64
-    freqstep = 1
-    cancel_DC = True
-
-    xlow = - spectrum_resolution / 2
-    xhigh = spectrum_resolution / 2
-    u = torch.arange(xlow, xhigh, freqstep)
-    v = torch.arange(xlow, xhigh, freqstep)
-
-    r = torch.arange(xlow, xhigh, freqstep)
-    theta = torch.arange(0, 2 * math.pi, math.pi/32)
-    cos_theta = torch.cos(theta)
-    sin_theta = torch.sin(theta)
-
-    r = r.unsqueeze(1)
-    cos_theta = cos_theta.unsqueeze(0)
-    sin_theta = sin_theta.unsqueeze(0)
-
-    uu = torch.matmul(r, cos_theta)
-    print(uu.shape)
-    vv = torch.matmul(r, sin_theta)
-
-    #uu, vv = torch.meshgrid(u, v)
-    grid = torch.stack((uu, vv))
-    grid = grid.float()
-    grid2 = grid.clone().detach().numpy()
-    plt.scatter(grid2[0, :, :].flatten(), grid2[1, :, :].flatten())
-    plt.savefig('grid.png')
-    plt.clf()
-
-    grid = grid.expand(n_patches, dim_points, spectrum_resolution, spectrum_resolution)
-    # grid = grid.to("cuda")
-    fp = torch.tensordot(bat_points, grid, dims=([2], [1]))
-
-    # torch.cuda.empty_cache()
-    angle = torch.mul(fp, 2 * math.pi)
-    angle = torch.mean(angle, dim=2)
-    realCoeff = torch.cos(angle)
-    imagCoeff = torch.sin(angle)
-
-    realCoeff = torch.sum(realCoeff, 1)
-    imagCoeff = torch.sum(imagCoeff, 1)
-
-    power = (realCoeff ** 2 + imagCoeff ** 2) / n_points
-    power = torch.mean(power, dim=0)
-    radial_means = 0
-    return radial_means,power
