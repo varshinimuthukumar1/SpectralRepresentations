@@ -1,24 +1,16 @@
+import os,sys
 import io_utils
-import random
+import torch.nn as nn
 import numpy as np
 import torch
 import argparse
 import matplotlib.pyplot as plt
-import torch.nn as nn
-
+from torch.utils.tensorboard import SummaryWriter
 # import my modules
-from channelnet import channelnet
+
+from samplenet import samplenet
 from Fourier import fourier_loss
 import cv2
-
-def weights_init(m):
-    classname = m.__class__.__name__
-    if classname.find('Linear') != -1:
-        #nn.init.xavier_uniform(m.weight.data)
-        nn.init.ones_(m.weight.data)
-
-    return
-
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -28,7 +20,7 @@ def parse_arguments():
     parser.add_argument('--ground_truth', type=str, default='', help='folder with target spectrums')
     parser.add_argument('-- target_spectrum' , type=str, default='target_spectrum.exr', help='arget spectrum')
     parser.add_argument('-- target_radialmeans', type=str, default='target_radialmeans.txt', help='arget spectrum')
-    parser.add_argument('--lr', type=float, default=0.00001, help='learning rate')
+    parser.add_argument('--lr', type=float, default=0.000001, help='learning rate')
 
     # model hyperparameters
 
@@ -37,11 +29,20 @@ def parse_arguments():
 
     return parser.parse_args()
 
+def weights_init(m):
+    classname = m.__class__.__name__
+    if classname.find('Linear') != -1:
+        #nn.init.xavier_uniform_(m.weight.data)
+        #nn.init.uniform_(m.weight.data)
+        nn.init.ones_(m.weight.data)
+
+    return
+
 def load_data():
 
     train = None
     test = None
-    for i in range(61):
+    for i in range(2):
         filename = 'data/plane/' + str(i) + '_plane_random_256.txt'
         points_2d, _ = io_utils.read_2Dplane(filename)
         points_2d = np.expand_dims(points_2d, axis=0)
@@ -65,8 +66,7 @@ def load_data():
         else:
             test = np.concatenate((test, points_2d), axis=0)
 
-    print(train.shape)
-    print(test.shape)
+
     ptcloud_points_t = torch.tensor(test, requires_grad=True)
     points_test = ptcloud_points_t.float()
 
@@ -83,12 +83,13 @@ def save_pred(pred):
 
 def bat_wrap_toroidal(bat_patch):
     less_zero = torch.empty(bat_patch.shape)
-    greater_one = torch.empty(bat_patch.shape)
+    greater_one = torch.empty(bat_patch.shape).to('cuda')
     wrapped = torch.empty(bat_patch.shape)
 
     less_zero = -bat_patch - torch.floor(- bat_patch)
-    ones = torch.ones(bat_patch.shape)
+    ones = torch.ones(bat_patch.shape).to('cuda')
     less_zero = ones - less_zero
+
 
     wrapped= torch.where(bat_patch <0, less_zero, bat_patch)
 
@@ -98,75 +99,86 @@ def bat_wrap_toroidal(bat_patch):
 
     return wrapped
 
+def compute_bat_loss(pred, target_radmeans):
+
+    loss = 0
+    for points in pred:
+
+
+        radialmeans, _ = fourier_loss.bat_compute_radialmeans(points)
+
+        loss += (torch.nn.L1Loss(radialmeans, target_radmeans) / pred.shape[0])
+
+        # predradialmeanssave = radialmeans.detach().numpy()
+
+        # np.savetxt(str(epoch) + 'pred_radialmeans.txt', predradialmeanssave, delimiter=',')
+        # plt.plot(predradialmeanssave[5:])
+        # plt.title("Radial means")
+        # plt.savefig(str(epoch) + 'predradialmeans.png')
+        # plt.clf()
+
+    return loss
+
+
 def train_samplenet(opt):
+    writer = SummaryWriter('runs/experiment_1')
+
 
     ############## load data #############################
     points_train, points_test = load_data()
-
     n_patches = points_train.shape[0]
     n_points = points_train.shape[1]
     n_dim =  points_train.shape[2]
 
-    points_train = points_train.unsqueeze(1)
-    points_test = points_test.unsqueeze(1)
-
-    points_train = points_train.permute(0,3,2,1)
-    points_test = points_test.permute(0, 3, 2, 1)
-
-
 
     ################## fix samplenet parameters ######################
-    model = channelnet(n_points, n_points, 2)
-    random.seed(random.randint(1, 10000))
-    torch.manual_seed(random.randint(1, 10000))
+    model = samplenet(num_points= n_points, hidden_size= n_points*8)
     model.apply(weights_init)
-
     criterion = torch.nn.L1Loss()
     optimizer = torch.optim.SGD(model.parameters(), lr= opt.lr)
-
-    print(model.modules)
 
     ################ fix target #########################################
 
     target_radmeans_np = np.loadtxt('target_radialmeans.txt')
-    plt.plot(target_radmeans_np)
-    plt.title("Radial means")
-    plt.savefig('radialmeans.png')
     target_radmeans = torch.tensor(target_radmeans_np, requires_grad=True)
-
-    target_radmeans  = target_radmeans.float()
-
+    target_radmeans  = target_radmeans.float().to('cuda')
 
     ############## train #################################################
 
     model.train()
-    epoch = 20
-    for param in model.parameters():
-        print(param.data)
+    epoch = 100
 
     for epoch in range(epoch):
 
         optimizer.zero_grad()
 
-        ###### Forward pass
-
-        # to cuda
-        #model.to("cuda")
-        #points_train= points_train.to("cuda")
-
-        print(points_train.shape)
+        #Forward pass
+        model.to("cuda")
+        points_train= points_train.to("cuda")
         pred = model(points_train)
-        print(pred.shape)
-        pred = pred.squeeze(2)
-        pred = pred.permute(0, 2, 1)
 
         pred = bat_wrap_toroidal(pred)
+        #Compute lossx
 
-        ###### Compute loss
+        loss = 0
+        for points in pred:
 
-        radialmeans ,_ = fourier_loss.bat_compute_radialmeans(pred)
+            points = points.unsqueeze(0)
+            radialmeans, _ = fourier_loss.bat_compute_radialmeans(points)
 
-        loss = criterion(radialmeans, target_radmeans)
+            loss += (criterion(radialmeans, target_radmeans) / pred.shape[0])
+
+            writer.add_scalar('training loss',
+                              loss / 1000,
+                              epoch )
+
+            # predradialmeanssave = radialmeans.detach().numpy()
+
+            # np.savetxt(str(epoch) + 'pred_radialmeans.txt', predradialmeanssave, delimiter=',')
+            # plt.plot(predradialmeanssave[5:])
+            # plt.title("Radial means")
+            # plt.savefig(str(epoch) + 'predradialmeans.png')
+            # plt.clf()
 
         print('Epoch {}: train loss: {}'.format(epoch, loss.item()))
 
@@ -176,45 +188,73 @@ def train_samplenet(opt):
 
     ############################## save model ###########################################
     torch.save(model.state_dict(), 'model.pth')
-
+    #for param in model.parameters():
+        #print(param.data)
     ########################### evaluate with test set ##################################
 
     model.eval()
-    ######### to cuda
-    #points_test = points_test.to("cuda")
-
+    points_test = points_test.to("cuda")
     pred = model(points_test)
-    pred = pred.squeeze(2)
-    pred = pred.permute(0, 2, 1)
-
     pred = bat_wrap_toroidal(pred)
-    predradialmeans ,pred_fourier = fourier_loss.bat_compute_radialmeans(pred)
-    testloss = criterion(predradialmeans, target_radmeans)
+
+    testloss = torch.zeros(1).to('cuda')
+    for points in pred:
+
+        points = points.unsqueeze(0)
+        radialmeans, _ = fourier_loss.bat_compute_radialmeans(points)
+        predradialmeans = radialmeans.clone().detach().cpu().numpy()
+
+        testloss += (criterion(radialmeans, target_radmeans) / pred.shape[0])
+
+        # predradialmeanssave = radialmeans.detach().numpy()
+
+        # np.savetxt(str(epoch) + 'pred_radialmeans.txt', predradialmeanssave, delimiter=',')
+        # plt.plot(predradialmeanssave[5:])
+        # plt.title("Radial means")
+        # plt.savefig(str(epoch) + 'predradialmeans.png')
+        # plt.clf()
+
+
+
+
+    ##tensorboard visualization
+    #writer.add_graph(model)
+    writer.close()
+
+
+
 
     # detach variables
+    # save target
+    # np.savetxt('target', target3d)
 
-    pred_fourier_save = pred_fourier.detach().numpy()
-    cv2.imwrite('pred_fourier.exr', pred_fourier_save)
+    #target_save = target_fourier.detach().numpy()
+    #cv2.imwrite('target_fourier.exr', target_save)
 
 
-    pred = pred.detach().numpy()
-    points_test = points_test.detach().numpy()
+    pred = pred.detach().cpu().numpy()
+    points_test = points_test.detach().cpu().numpy()
     plt.scatter(pred[0,:,0],pred[0,:,1] , c = 'red')
     plt.scatter(points_test[0,:,0], points_test[0,:,1] , c = 'blue')
     plt.savefig('output1.png')
     plt.clf()
 
-    predradialmeans = predradialmeans.detach().numpy()
+    # plt.scatter(pred[0, :, 0], pred[0, :, 1], c='red')
+    # plt.scatter(points_2d[:, 0], points_2d[:, 1], c='green')
+    # plt.savefig('output2.png')
+    # plt.clf()
 
     np.savetxt('pred_radialmeans.txt', predradialmeans, delimiter=',')
     plt.plot(predradialmeans[1:])
     plt.title("Radial means")
     plt.savefig('predradialmeans.png')
+    plt.show()
+
     save_pred(pred)
 
     print('test loss: {}'.format(testloss.item()))
     # save model
-    torch.save(model.state_dict(), 'model2.pth')
+    torch.save(model.state_dict(), 'model.pth')
 
     return
 
